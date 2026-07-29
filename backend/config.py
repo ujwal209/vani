@@ -2,6 +2,7 @@ import os
 from typing import List
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+env_path = os.path.join(os.path.dirname(__file__), ".env")
 
 class Settings(BaseSettings):
     MONGODB_URI: str = "mongodb://localhost:27017"
@@ -20,7 +21,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
     model_config = SettingsConfigDict(
-        env_file=os.path.join(os.path.dirname(__file__), ".env"),
+        env_file=env_path if os.path.exists(env_path) else None,
         env_file_encoding="utf-8",
         extra="ignore"
     )
@@ -28,7 +29,6 @@ class Settings(BaseSettings):
     def parse_keys(self, raw_str: str) -> List[str]:
         if not raw_str:
             return []
-        # Replace newlines, split by comma or space
         cleaned = raw_str.replace("\n", "").replace("\r", "")
         keys = [k.strip() for k in cleaned.split(",") if k.strip()]
         return keys

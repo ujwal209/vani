@@ -17,26 +17,28 @@ logger = logging.getLogger("vani.main")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Initializing Vani Backend API...")
-    logger.info(f"Loaded {len(settings.gemini_keys_list)} Gemini/Gemma API keys.")
-    logger.info(f"Loaded {len(settings.tavily_keys_list)} Tavily API keys.")
-    logger.info(f"Loaded {len(settings.sarvam_keys_list)} Sarvam API keys.")
-    
-    await connect_to_mongo()
+    logger.info("Initializing Vani Backend API on Vercel Serverless...")
+    try:
+        await connect_to_mongo()
+    except Exception as e:
+        logger.warning(f"Mongo startup warning: {e}")
     yield
-    await close_mongo_connection()
+    try:
+        await close_mongo_connection()
+    except Exception:
+        pass
 
 app = FastAPI(
     title="Vani - Rural & Citizen Policy Assistant API",
-    description="Backend service powering voice STT/TTS (Sarvam), Tavily Search, Gemma LLM, and Email Authentication.",
+    description="Backend service powering voice STT/TTS (Sarvam), Tavily Search, Gemma/Groq LLM, and Email Authentication.",
     version="1.0.0",
     lifespan=lifespan
 )
 
-# Enable CORS for Next.js frontend
+# Enable CORS for Next.js frontend & Vercel deployments
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust for production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -53,6 +55,7 @@ async def root():
         "version": "1.0.0",
         "keys_status": {
             "gemini_keys": len(settings.gemini_keys_list),
+            "groq_keys": len(settings.groq_keys_list),
             "tavily_keys": len(settings.tavily_keys_list),
             "sarvam_keys": len(settings.sarvam_keys_list)
         }
